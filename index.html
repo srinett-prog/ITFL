@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Inteliblue — Candidate Approval Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --ink: #0d0d0d;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --emerald: #2ecc71;
+    --ruby: #e74c3c;
+    --amber: #f39c12;
+    --steel: #8892a4;
+    --border: rgba(201,168,76,0.15);
+    --card: rgba(255,255,255,0.03);
+    --glass: rgba(255,255,255,0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ink);
+    color: #e8e4dc;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,13,13,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 68px;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-divider { width: 1px; height: 20px; background: var(--border); }
+  .logo-sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    color: var(--steel);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .header-right { display: flex; align-items: center; gap: 1rem; }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--steel);
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--emerald);
+    border-radius: 50%;
+    animation: livepulse 2s infinite;
+  }
+
+  @keyframes livepulse {
+    0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(46,204,113,0.4)}
+    50%{opacity:0.7;box-shadow:0 0 0 6px rgba(46,204,113,0)}
+  }
+
+  .header-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--gold);
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.2s;
+  }
+
+  .header-btn:hover { background: rgba(201,168,76,0.08); border-color: var(--gold); }
+  .header-btn:disabled { opacity: 0.5; cursor: wait; }
+
+  main {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    height: calc(100vh - 68px);
+  }
+
+  /* LEFT PANEL */
+  .queue-panel {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .queue-header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .queue-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    margin-bottom: 0.3rem;
+  }
+
+  .queue-meta { font-size: 0.72rem; color: var(--steel); }
+
+  .search-bar {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    color: #e8e4dc;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus { border-color: var(--gold); }
+  .search-input::placeholder { color: var(--steel); }
+
+  .req-filter {
+    padding: 0 0.75rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .req-select {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 0.75rem;
+    color: #e8e4dc;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat {
+    background: var(--ink);
+    padding: 0.9rem 1rem;
+    text-align: center;
+  }
+
+  .stat-val { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--gold); display: block; }
+  .stat-lbl { font-size: 0.65rem; color: var(--steel); text-transform: uppercase; letter-spacing: 0.1em; display: block; }
+
+  .queue-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .queue-list::-webkit-scrollbar { width: 3px; }
+  .queue-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .queue-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .queue-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--gold);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .queue-card:hover { background: var(--glass); border-color: rgba(201,168,76,0.3); }
+  .queue-card:hover::before { opacity: 0.5; }
+  .queue-card.active { background: rgba(201,168,76,0.07); border-color: var(--gold); }
+  .queue-card.active::before { opacity: 1; }
+  .queue-card.approved-card { border-color: rgba(46,204,113,0.3); }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.4rem; }
+  .card-name { font-weight: 600; font-size: 0.9rem; }
+
+  .match-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .match-high { background: rgba(46,204,113,0.15); color: var(--emerald); border: 1px solid rgba(46,204,113,0.25); }
+  .match-mid { background: rgba(243,156,18,0.15); color: var(--amber); border: 1px solid rgba(243,156,18,0.25); }
+  .match-low { background: rgba(231,76,60,0.15); color: var(--ruby); border: 1px solid rgba(231,76,60,0.25); }
+
+  .card-role { font-size: 0.75rem; color: var(--steel); margin-bottom: 0.4rem; }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .card-tag {
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.05);
+    color: var(--steel);
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .card-time { font-size: 0.65rem; color: var(--steel); margin-top: 0.5rem; font-family: 'JetBrains Mono', monospace; }
+
+  /* RIGHT PANEL */
+  .review-panel { display: flex; flex-direction: column; overflow: hidden; }
+
+  .placeholder-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem;
+    gap: 1rem;
+  }
+
+  .placeholder-icon { font-size: 3rem; opacity: 0.15; }
+  .placeholder-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--steel); opacity: 0.6; }
+  .placeholder-sub { font-size: 0.8rem; color: var(--steel); opacity: 0.4; line-height: 1.6; max-width: 300px; }
+
+  .review-content { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+
+  .review-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .candidate-info { display: flex; align-items: center; gap: 1.2rem; }
+
+  .avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; font-weight: 600;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .candidate-name { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 4px; }
+  .candidate-meta { font-size: 0.78rem; color: var(--steel); display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .action-buttons { display: flex; gap: 0.75rem; }
+
+  .btn {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 7px;
+  }
+
+  .btn-approve { background: var(--gold); color: var(--ink); }
+  .btn-approve:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(201,168,76,0.25); }
+  .btn-decline { background: transparent; color: var(--ruby); border: 1px solid rgba(231,76,60,0.3); }
+  .btn-decline:hover { background: rgba(231,76,60,0.1); }
+  .btn-hold { background: transparent; color: var(--steel); border: 1px solid var(--border); }
+  .btn-hold:hover { color: var(--amber); border-color: rgba(243,156,18,0.3); }
+
+  .split-view { display: grid; grid-template-columns: 1fr 1fr; flex: 1; overflow: hidden; }
+
+  .split-pane { padding: 1.8rem 2rem; overflow-y: auto; }
+  .split-pane::-webkit-scrollbar { width: 3px; }
+  .split-pane::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .split-pane:first-child { border-right: 1px solid var(--border); }
+
+  .pane-label {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--gold); margin-bottom: 1.2rem;
+    display: flex; align-items: center; gap: 10px; font-weight: 600;
+  }
+
+  .pane-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .job-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 0.75rem; }
+
+  .tags-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.2rem; }
+  .tag-gold { padding: 4px 10px; border-radius: 5px; font-size: 0.72rem; font-weight: 500; background: rgba(201,168,76,0.12); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
+  .tag-steel { padding: 4px 10px; border-radius: 5px; font-size: 0.72rem; font-weight: 500; background: rgba(136,146,164,0.1); color: var(--steel); border: 1px solid rgba(136,146,164,0.15); }
+
+  .section { margin-bottom: 1.4rem; }
+  .section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--steel); margin-bottom: 0.6rem; font-weight: 600; }
+  .section-value { font-size: 0.875rem; line-height: 1.65; color: #c8c4bc; }
+
+  .req-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .req-list li { font-size: 0.85rem; color: #c8c4bc; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+  .req-list li::before { content: '◆'; font-size: 0.45rem; color: var(--gold); flex-shrink: 0; margin-top: 6px; }
+
+  .match-bar-section {
+    background: rgba(201,168,76,0.05);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .match-bar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .match-label { font-size: 0.72rem; color: var(--steel); letter-spacing: 0.08em; }
+  .match-score-big { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--gold); }
+  .match-bar-wrap { width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .match-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); transition: width 0.8s ease; }
+  .match-reason { font-size: 0.72rem; color: var(--steel); margin-top: 0.4rem; }
+
+  .skill-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .skill-chip { padding: 4px 10px; border-radius: 5px; font-size: 0.72rem; font-weight: 500; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: var(--steel); }
+  .skill-chip.matched { background: rgba(46,204,113,0.1); border-color: rgba(46,204,113,0.25); color: var(--emerald); }
+
+  /* Approved contact card */
+  .contact-card {
+    background: rgba(46,204,113,0.07);
+    border: 1px solid rgba(46,204,113,0.25);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.2rem;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+  .contact-card-title {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--emerald); font-weight: 700; margin-bottom: 1rem;
+  }
+
+  .contact-row { display: flex; align-items: center; gap: 12px; padding: 0.6rem 0; border-bottom: 1px solid rgba(46,204,113,0.1); }
+  .contact-row:last-child { border-bottom: none; }
+  .contact-icon { font-size: 1rem; width: 24px; text-align: center; }
+  .contact-lbl { font-size: 0.68rem; color: var(--steel); text-transform: uppercase; letter-spacing: 0.08em; width: 60px; }
+  .contact-val { font-size: 0.9rem; color: #e8e4dc; font-weight: 500; }
+  .contact-val.phone { font-family: 'JetBrains Mono', monospace; color: var(--emerald); font-size: 1.05rem; }
+
+  .call-instruction {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 8px;
+    padding: 0.9rem 1.2rem;
+    font-size: 0.8rem;
+    color: var(--gold);
+    margin-top: 0.75rem;
+    line-height: 1.6;
+  }
+
+  /* States */
+  .loading-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; }
+  .spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 0.78rem; color: var(--steel); letter-spacing: 0.1em; }
+
+  .empty-state { padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; }
+  .empty-icon { font-size: 2.5rem; opacity: 0.3; }
+  .empty-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--steel); }
+  .empty-sub { font-size: 0.78rem; color: var(--steel); opacity: 0.7; line-height: 1.6; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: #111; border: 1px solid var(--border);
+    border-radius: 12px; padding: 1rem 1.5rem;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 0.875rem; z-index: 999;
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    max-width: 360px;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    Inteliblue
+    <div class="logo-divider"></div>
+    <span class="logo-sub">Approval Center</span>
+  </div>
+  <div class="header-right">
+    <div class="live-indicator">
+      <div class="live-dot"></div>
+      <span id="live-text">Live</span>
+    </div>
+    <button class="header-btn" onclick="exportApproved()">↓ Export CSV</button>
+    <button class="header-btn" onclick="syncCandidates()" id="sync-btn">↻ Sync Ceipal</button>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT QUEUE -->
+  <div class="queue-panel">
+    <div class="queue-header">
+      <div class="queue-title">Qualified Candidates</div>
+      <div class="queue-meta" id="queue-meta">Connecting to Ceipal...</div>
+    </div>
+
+    <div class="search-bar">
+      <input class="search-input" id="search-input" placeholder="Search by name, skill, job title..." oninput="onSearch(this.value)"/>
+    </div>
+
+    <div class="req-filter">
+      <select class="req-select" id="req-filter" onchange="onFilterReq(this.value)">
+        <option value="">All Job Requisitions</option>
+      </select>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat">
+        <span class="stat-val" id="stat-pending">—</span>
+        <span class="stat-lbl">Pending</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val" id="stat-approved" style="color:var(--emerald)">—</span>
+        <span class="stat-lbl">Approved</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val" id="stat-declined" style="color:var(--ruby)">—</span>
+        <span class="stat-lbl">Declined</span>
+      </div>
+    </div>
+
+    <div class="queue-list" id="queue-list">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <div class="loading-text">CONNECTING TO CEIPAL</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT REVIEW -->
+  <div class="review-panel">
+    <div class="placeholder-state" id="placeholder">
+      <div class="placeholder-icon">⚖</div>
+      <div class="placeholder-title">Select a candidate to review</div>
+      <div class="placeholder-sub">Choose a qualified candidate from the queue to compare their resume against the job requirements</div>
+    </div>
+
+    <div class="review-content" id="review-content">
+      <div class="review-header">
+        <div class="candidate-info">
+          <div class="avatar" id="rev-avatar" style="background:rgba(201,168,76,0.1);color:var(--gold)">—</div>
+          <div>
+            <div class="candidate-name" id="rev-name">—</div>
+            <div class="candidate-meta" id="rev-meta"></div>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-hold" onclick="handleAction('hold')">⏸ Hold</button>
+          <button class="btn btn-decline" onclick="handleAction('decline')">✕ Decline</button>
+          <button class="btn btn-approve" onclick="handleAction('approve')">✓ Approve</button>
+        </div>
+      </div>
+
+      <div class="split-view">
+        <div class="split-pane">
+          <div class="pane-label">Job Requirement</div>
+          <div id="job-pane"><div style="color:var(--steel);font-size:0.85rem">Loading job details...</div></div>
+        </div>
+        <div class="split-pane">
+          <div class="pane-label">Candidate Profile</div>
+          <div id="resume-pane"><div style="color:var(--steel);font-size:0.85rem">Loading candidate...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast">
+  <span id="toast-icon">✓</span>
+  <span id="toast-msg">Done</span>
+</div>
+
+<script>
+  // ── State ─────────────────────────────────────────────────
+  const API = 'https://itfl.onrender.com';
+  let candidates = [];
+  let requisitions = [];
+  let selectedId = null;
+  let searchQuery = '';
+  let filterReqId = '';
+  let stats = { pending: 0, approved: 0, declined: 0 };
+
+  // ── Boot ──────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    requestNotificationPermission();
+    syncCandidates();
+    setInterval(syncCandidates, 5 * 60 * 1000);
+  });
+
+  // ── Sync ──────────────────────────────────────────────────
+  let previousCount = 0;
+
+  async function syncCandidates() {
+    const btn = document.getElementById('sync-btn');
+    btn.disabled = true;
+    btn.textContent = '↻ Syncing...';
+
+    try {
+      const jobParam = filterReqId ? `?job_id=${filterReqId}` : '';
+      const [candRes, reqRes] = await Promise.all([
+        fetch(`${API}/api/candidates${jobParam}`).then(r => r.json()),
+        fetch(`${API}/api/requisitions`).then(r => r.json())
+      ]);
+
+      if (candRes.success) {
+        const fresh = candRes.candidates.map(mapCandidate);
+        // Check for new arrivals
+        if (fresh.length > previousCount && previousCount > 0) {
+          const diff = fresh.length - previousCount;
+          showToast('🔔', `${diff} new qualified candidate${diff > 1 ? 's' : ''} from Ceipal!`);
+          fresh.slice(previousCount).forEach(c => pushNotification(c));
+        }
+        previousCount = fresh.length;
+
+        // Preserve local state
+        fresh.forEach(c => {
+          const ex = candidates.find(e => e.id == c.id);
+          if (ex) { c.actioned = ex.actioned; c.approved = ex.approved; c.onHold = ex.onHold; }
+        });
+        candidates = fresh;
+      }
+
+      if (reqRes.success) {
+        requisitions = reqRes.requisitions;
+        renderReqFilter();
+      }
+
+      renderQueue();
+      updateStats();
+      document.getElementById('queue-meta').textContent =
+        `Synced ${new Date().toLocaleTimeString()} · ${candidates.filter(c=>!c.actioned).length} pending`;
+
+    } catch(e) {
+      showToast('⚠', 'Could not reach server. Retrying soon...');
+      document.getElementById('queue-meta').textContent = 'Connection error — retrying...';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '↻ Sync Ceipal';
+    }
+  }
+
+  // ── Map Ceipal candidate to our format ────────────────────
+  function mapCandidate(c, i) {
+    const skills = c.skills
+      ? (Array.isArray(c.skills) ? c.skills : c.skills.split(',').map(s => s.trim()))
+      : [];
+
+    const mapped = {
+      id: c.id || c.applicant_id || i,
+      name: c.name || c.applicant_name ||
+            ((c.first_name || '') + ' ' + (c.last_name || '')).trim() || 'Unknown',
+      email: c.email || c.applicant_email || '',
+      phone: c.phone || c.mobile || c.contact_number || '',
+      location: c.location || c.city || c.state || '',
+      status: c.applicant_status || c.status || 'Qualified',
+      source: c.source || 'Ceipal',
+      skills: skills,
+      experience: c.experience || c.total_experience || '',
+      job_title: c.job_title || c.position || 'IT Position',
+      req_id: c.job_id || c.requisition_id || '',
+      matched_at: c.created_at || c.applied_date || new Date().toISOString(),
+      score: 0,
+      actioned: false,
+      approved: false,
+      onHold: false,
+      job: {
+        title: c.job_title || c.position || 'Open Position',
+        location: c.job_location || c.location || 'USA',
+        type: c.employment_type || c.job_type || 'Full-Time',
+        auth: c.work_authorization || 'All authorizations welcome',
+        experience: c.required_experience || '3+ years',
+        skills: c.required_skills
+          ? (Array.isArray(c.required_skills) ? c.required_skills : c.required_skills.split(',').map(s => s.trim()))
+          : skills,
+        description: c.job_description || 'See full job description in Ceipal.'
+      }
+    };
+  }
+
+  function computeScore(c) {
+    // Backend calculates real score — just return it
+    return c.score || 70;
+  }
+
+  // ── Render Queue ──────────────────────────────────────────
+  function renderQueue() {
+    const list = document.getElementById('queue-list');
+    let active = candidates.filter(c => !c.actioned || c.approved);
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      active = active.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        c.job_title.toLowerCase().includes(q) ||
+        c.skills.some(s => s.toLowerCase().includes(q))
+      );
+    }
+
+    if (filterReqId) {
+      active = active.filter(c => String(c.req_id) === String(filterReqId));
+    }
+
+    if (active.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">${searchQuery ? '🔍' : '✓'}</div>
+          <div class="empty-title">${searchQuery ? 'No matches' : 'All caught up!'}</div>
+          <div class="empty-sub">${searchQuery ? 'Try a different search term' : 'No qualified candidates pending. Ceipal will sync automatically every 5 minutes.'}</div>
+        </div>`;
+      return;
+    }
+
+    // Sort: pending first, then approved
+    active.sort((a, b) => {
+      if (a.approved && !b.approved) return 1;
+      if (!a.approved && b.approved) return -1;
+      return b.score - a.score;
+    });
+
+    list.innerHTML = active.map((c, idx) => {
+      const sc = c.score >= 85 ? 'match-high' : c.score >= 70 ? 'match-mid' : 'match-low';
+      const globalIdx = candidates.indexOf(c);
+      return `
+        <div class="queue-card ${selectedId === globalIdx ? 'active' : ''} ${c.approved ? 'approved-card' : ''}" onclick="selectCandidate(${globalIdx})">
+          <div class="card-top">
+            <div class="card-name">${c.name}</div>
+            <span class="match-pill ${sc}">${c.score}%</span>
+          </div>
+          <div class="card-role">${c.job_title} · ${c.source}</div>
+          <div class="card-tags">
+            ${c.location ? `<span class="card-tag">📍 ${c.location}</span>` : ''}
+            ${c.approved ? '<span class="card-tag" style="color:var(--emerald);border-color:rgba(46,204,113,0.3)">✓ Approved</span>' : ''}
+            ${c.onHold ? '<span class="card-tag" style="color:var(--amber)">⏸ Hold</span>' : ''}
+          </div>
+          <div class="card-time">${timeAgo(c.matched_at)}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Select Candidate ──────────────────────────────────────
+  function selectCandidate(idx) {
+    selectedId = idx;
+    const c = candidates[idx];
+    if (!c) return;
+
+    document.getElementById('placeholder').style.display = 'none';
+    const rc = document.getElementById('review-content');
+    rc.style.display = 'flex';
+
+    const initials = c.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('rev-avatar').textContent = initials;
+    document.getElementById('rev-name').textContent = c.name;
+    document.getElementById('rev-meta').innerHTML = `
+      ${c.email ? `<span>📧 ${c.email}</span>` : ''}
+      ${c.location ? `<span>📍 ${c.location}</span>` : ''}
+      <span>📋 ${c.source}</span>`;
+
+    if (c.approved) {
+      renderApprovedContact(c);
+    } else {
+      renderJobPane(c);
+      renderResumePane(c);
+    }
+
+    renderQueue();
+  }
+
+  function renderJobPane(c) {
+    document.getElementById('job-pane').innerHTML = `
+      <div class="job-title">${c.job.title}</div>
+      <div class="tags-row">
+        <span class="tag-gold">${c.job.type}</span>
+        <span class="tag-steel">${c.job.location}</span>
+        <span class="tag-steel">${c.job.auth}</span>
+      </div>
+      <div class="section">
+        <div class="section-label">Required Experience</div>
+        <div class="section-value">${c.job.experience}</div>
+      </div>
+      <div class="section">
+        <div class="section-label">Required Skills</div>
+        <ul class="req-list">
+          ${c.job.skills.map(s => `<li>${s}</li>`).join('')}
+        </ul>
+      </div>
+      <div class="section">
+        <div class="section-label">Description</div>
+        <div class="section-value">${c.job.description}</div>
+      </div>`;
+  }
+
+  function renderResumePane(c) {
+    const matchedSkills = c.skills.filter(s =>
+      c.job.skills.some(js =>
+        js.toLowerCase().includes(s.toLowerCase()) ||
+        s.toLowerCase().includes(js.toLowerCase())
+      )
+    );
+
+    document.getElementById('resume-pane').innerHTML = `
+      <div class="match-bar-section">
+        <div class="match-bar-top">
+          <span class="match-label">AI MATCH SCORE</span>
+          <span class="match-score-big">${c.score}%</span>
+        </div>
+        <div class="match-bar-wrap">
+          <div class="match-bar-fill" style="width:${c.score}%"></div>
+        </div>
+        <div class="match-reason">${matchedSkills.length} of ${c.job.skills.length} required skills matched · ${c.source}</div>
+      </div>
+      ${c.phone ? `
+      <div class="section">
+        <div class="section-label">Phone</div>
+        <div class="section-value" style="font-family:'JetBrains Mono',monospace;font-size:1rem;color:#e8e4dc">${c.phone}</div>
+      </div>` : ''}
+      ${c.email ? `
+      <div class="section">
+        <div class="section-label">Email</div>
+        <div class="section-value">${c.email}</div>
+      </div>` : ''}
+      ${c.experience ? `
+      <div class="section">
+        <div class="section-label">Experience</div>
+        <div class="section-value">${c.experience} years</div>
+      </div>` : ''}
+      ${c.skills.length > 0 ? `
+      <div class="section">
+        <div class="section-label">Skills</div>
+        <div class="skill-chips">
+          ${c.skills.map(s => {
+            const m = matchedSkills.some(ms => ms.toLowerCase() === s.toLowerCase());
+            return `<span class="skill-chip ${m ? 'matched' : ''}">${s}</span>`;
+          }).join('')}
+        </div>
+      </div>` : ''}`;
+  }
+
+  function renderApprovedContact(c) {
+    document.getElementById('job-pane').innerHTML = `
+      <div class="job-title">${c.job.title}</div>
+      <div class="tags-row">
+        <span class="tag-gold">${c.job.type}</span>
+        <span class="tag-steel">${c.job.location}</span>
+      </div>
+      <div class="section">
+        <div class="section-label">Required Skills</div>
+        <ul class="req-list">${c.job.skills.map(s => `<li>${s}</li>`).join('')}</ul>
+      </div>`;
+
+    document.getElementById('resume-pane').innerHTML = `
+      <div class="contact-card">
+        <div class="contact-card-title">✓ APPROVED — READY TO CALL</div>
+        <div class="contact-row">
+          <span class="contact-icon">📱</span>
+          <span class="contact-lbl">Phone</span>
+          <span class="contact-val phone">${c.phone || 'Not on file — check Ceipal'}</span>
+        </div>
+        <div class="contact-row">
+          <span class="contact-icon">📧</span>
+          <span class="contact-lbl">Email</span>
+          <span class="contact-val">${c.email || 'Not on file'}</span>
+        </div>
+        <div class="contact-row">
+          <span class="contact-icon">📍</span>
+          <span class="contact-lbl">Location</span>
+          <span class="contact-val">${c.location || 'Not specified'}</span>
+        </div>
+        <div class="contact-row">
+          <span class="contact-icon">🔗</span>
+          <span class="contact-lbl">Source</span>
+          <span class="contact-val">${c.source}</span>
+        </div>
+      </div>
+      <div class="call-instruction">
+        📞 Call this candidate now using RingCentral at <strong>(501) 232-2396</strong><br/>
+        Mention the <strong>${c.job.title}</strong> opportunity and reference their profile from ${c.source}.
+      </div>`;
+  }
+
+  // ── Actions ───────────────────────────────────────────────
+  function handleAction(action) {
+    if (selectedId === null || selectedId === undefined) return;
+    const c = candidates[selectedId];
+    if (!c) return;
+
+    if (action === 'approve') {
+      c.approved = true;
+      stats.approved++;
+      renderApprovedContact(c);
+      showToast('✓', `${c.name} approved! Contact info ready for your recruiter.`);
+    } else if (action === 'decline') {
+      c.actioned = true;
+      stats.declined++;
+      selectedId = null;
+      document.getElementById('placeholder').style.display = 'flex';
+      document.getElementById('review-content').style.display = 'none';
+      showToast('✕', `${c.name} declined.`);
+    } else {
+      c.actioned = true;
+      c.onHold = true;
+      selectedId = null;
+      document.getElementById('placeholder').style.display = 'flex';
+      document.getElementById('review-content').style.display = 'none';
+      showToast('⏸', `${c.name} placed on hold.`);
+    }
+
+    updateStats();
+    renderQueue();
+  }
+
+  // ── Stats ─────────────────────────────────────────────────
+  function updateStats() {
+    stats.pending = candidates.filter(c => !c.actioned && !c.approved).length;
+    document.getElementById('stat-pending').textContent = stats.pending;
+    document.getElementById('stat-approved').textContent = stats.approved;
+    document.getElementById('stat-declined').textContent = stats.declined;
+  }
+
+  // ── Filters ───────────────────────────────────────────────
+  function onSearch(q) { searchQuery = q; renderQueue(); }
+  function onFilterReq(v) { filterReqId = v; syncCandidates(); }
+
+  function renderReqFilter() {
+    const sel = document.getElementById('req-filter');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All Job Requisitions</option>' +
+      requisitions.map(r => `<option value="${r.id||r.job_id}">${r.job_title||r.title||'Job #'+(r.id||r.job_id)}</option>`).join('');
+    sel.value = current;
+  }
+
+  // ── Export ────────────────────────────────────────────────
+  function exportApproved() {
+    const approved = candidates.filter(c => c.approved);
+    if (!approved.length) { showToast('⚠', 'No approved candidates yet'); return; }
+    const rows = [
+      ['Name','Email','Phone','Location','Job Title','Match Score','Source','Skills'],
+      ...approved.map(c => [c.name,c.email,c.phone,c.location,c.job_title,c.score+'%',c.source,c.skills.join('; ')])
+    ];
+    const csv = rows.map(r => r.map(v => `"${v||''}"`).join(',')).join('\n');
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})),
+      download: `inteliblue_approved_${new Date().toISOString().slice(0,10)}.csv`
+    });
+    a.click();
+    showToast('📥', `Exported ${approved.length} candidates`);
+  }
+
+  // ── Notifications ─────────────────────────────────────────
+  function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }
+
+  function pushNotification(c) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('New Qualified Candidate — Inteliblue', {
+        body: `${c.name} · ${c.score}% match for ${c.job_title}`
+      });
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────
+  function timeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const m = Math.floor(diff/60000);
+    if (m < 1) return 'Just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m/60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h/24)}d ago`;
+  }
+
+  function showToast(icon, msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-icon').textContent = icon;
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+</script>
+</body>
+</html>
